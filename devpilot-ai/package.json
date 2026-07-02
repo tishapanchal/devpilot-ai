@@ -11,14 +11,14 @@
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
-  "contributes": {
+"contributes": {
     "commands": [
-      {
-        "command": "devpilot-ai.helloWorld",
-        "title": "Hello World"
-      }
+        {
+            "command": "devpilot-ai.analyzeCode",
+            "title": "DevPilot AI: Analyze Code"
+        }
     ]
-  },
+},
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
