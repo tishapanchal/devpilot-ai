@@ -1,40 +1,49 @@
+import * as path from 'path';
 import * as vscode from 'vscode';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+import * as fs from 'fs';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('DevPilot AI is now active!');
 
-	const disposable = vscode.commands.registerCommand('devpilot-ai.analyzeCode', async () => {
+	const disposable = vscode.commands.registerCommand('devpilot-ai.openChat', async () => {
 		
-		// Get the active editor
-		const editor = vscode.window.activeTextEditor;
-		if (!editor) {
-			vscode.window.showErrorMessage('No file is open!');
-			return;
-		}
+		const panel = vscode.window.createWebviewPanel(
+			'devpilotAI',
+			'DevPilot AI',
+			vscode.ViewColumn.Beside,
+			{ enableScripts: true }
+		);
 
-		// Get the code from the file
-		const code = editor.document.getText();
-		const fileName = editor.document.fileName;
+		const htmlPath = path.join(context.extensionPath, 'src', 'sidebar.html');
+		panel.webview.html = fs.readFileSync(htmlPath, 'utf8');
 
-		// Show loading message
-		vscode.window.showInformationMessage('DevPilot AI is analyzing your code...');
+		panel.webview.onDidReceiveMessage(async (message) => {
+			if (message.command === 'ask') {
+				try {
+					const response = await fetch('http://localhost:11434/api/generate', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							model: 'llama3.2',
+							prompt: message.text,
+							stream: false
+						})
+					});
 
-		try {
-			// Send code to Gemini
-			const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-			const prompt = `Analyze this code and find any bugs or improvements:\n\n${code}`;
-			const result = await model.generateContent(prompt);
-			const response = result.response.text();
+					const data = await response.json() as { response: string };
 
-			// Show the response
-			vscode.window.showInformationMessage(response.substring(0, 200));
-
-		} catch (error) {
-			vscode.window.showErrorMessage('Error analyzing code: ' + error);
-		}
+					panel.webview.postMessage({
+						command: 'response',
+						text: data.response
+					});
+				} catch (error) {
+					panel.webview.postMessage({
+						command: 'response',
+						text: 'Error: ' + error
+					});
+				}
+			}
+		});
 	});
 
 	context.subscriptions.push(disposable);
