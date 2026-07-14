@@ -27,6 +27,11 @@
         .send-btn { background-color: #0e639c; color: white; border: none; border-radius: 6px; padding: 8px 15px; cursor: pointer; font-size: 13px; }
         .send-btn:hover { background-color: #1177bb; }
         .welcome { text-align: center; color: #888; margin-top: 50px; font-size: 13px; }
+        .typing-indicator { display: flex; gap: 4px; padding: 10px 15px; background-color: #2d2d2d; border-radius: 8px; align-self: flex-start; border: 1px solid #3c3c3c; }
+        .typing-indicator span { width: 8px; height: 8px; background-color: #4fc3f7; border-radius: 50%; animation: bounce 1s infinite; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
     </style>
 </head>
 <body>
@@ -52,6 +57,22 @@
         function analyzeCode() {
             vscode.postMessage({ command: 'analyzeCode' });
             addMessage('Analyzing your code...', 'user');
+            showTypingIndicator();
+        }
+
+        function showTypingIndicator() {
+            const chat = document.getElementById('chat');
+            const div = document.createElement('div');
+            div.className = 'typing-indicator';
+            div.id = 'typing';
+            div.innerHTML = '<span></span><span></span><span></span>';
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typing = document.getElementById('typing');
+            if (typing) typing.remove();
         }
 
         function sendMessage() {
@@ -60,6 +81,7 @@
             if (!message) return;
             addMessage(message, 'user');
             input.value = '';
+            showTypingIndicator();
             vscode.postMessage({ command: 'ask', text: message });
         }
 
@@ -79,8 +101,10 @@
         window.addEventListener('message', event => {
             const message = event.data;
             if (message.command === 'response') {
+                hideTypingIndicator();
                 addMessage(message.text, 'ai');
             } else if (message.command === 'startStream') {
+                hideTypingIndicator();
                 streamingText = '';
                 const chat = document.getElementById('chat');
                 streamingDiv = document.createElement('div');
