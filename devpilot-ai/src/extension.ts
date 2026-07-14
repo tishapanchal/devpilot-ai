@@ -17,6 +17,29 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const disposable = vscode.commands.registerCommand('devpilot-ai.openChat', async () => {
 
+		function getWorkspaceFiles(): string {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) return '';
+
+    let allCode = '';
+    const folder = workspaceFolders[0].uri.fsPath;
+
+    const files = fs.readdirSync(folder).filter(f => 
+        f.endsWith('.ts') || f.endsWith('.js') || 
+        f.endsWith('.tsx') || f.endsWith('.jsx') ||
+        f.endsWith('.py') || f.endsWith('.html') ||
+        f.endsWith('.css')
+    );
+
+    for (const file of files) {
+        const filePath = path.join(folder, file);
+        const content = fs.readFileSync(filePath, 'utf8');
+        allCode += `\n\n--- File: ${file} ---\n${content}`;
+    }
+
+    return allCode;
+}
+
 		// Save current editor before opening panel
 		lastActiveEditor = vscode.window.activeTextEditor || lastActiveEditor;
 
@@ -40,9 +63,17 @@ export function activate(context: vscode.ExtensionContext) {
 					return;
 				}
 				const code = lastActiveEditor.document.getText();
-				const fileName = lastActiveEditor.document.fileName;
-				const prompt = `Analyze this code from file "${fileName}" and find any bugs, errors, or improvements:\n\n${code}`;
+const fileName = lastActiveEditor.document.fileName;
+const workspaceCode = getWorkspaceFiles();
+const prompt = `You are an expert developer assistant. 
+The user has this file open: "${fileName}"
 
+Current file content:
+${code}
+
+${workspaceCode ? `Other files in the project:${workspaceCode}` : ''}
+
+Analyze the code, find bugs, errors, and suggest improvements.`;
 				try {
 					const response = await fetch('http://localhost:11434/api/generate', {
 						method: 'POST',
