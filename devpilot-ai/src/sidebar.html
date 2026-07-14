@@ -177,12 +177,77 @@
             chat.scrollTop = chat.scrollHeight;
         }
 
-        window.addEventListener('message', event => {
-            const message = event.data;
-            if (message.command === 'response') {
-                addMessage(message.text, 'ai');
-            }
-        });
+        let streamingDiv = null;
+
+let streamingDiv = null;
+let streamingText = '';
+
+window.addEventListener('message', event => {
+    const message = event.data;
+    
+    if (message.command === 'response') {
+        addMessage(message.text, 'ai');
+    }
+    
+    else if (message.command === 'startStream') {
+        streamingText = '';
+        const chat = document.getElementById('chat');
+        streamingDiv = document.createElement('div');
+        streamingDiv.className = 'message ai';
+        chat.appendChild(streamingDiv);
+        chat.scrollTop = chat.scrollHeight;
+    }
+    
+    else if (message.command === 'streamChunk') {
+        if (streamingDiv) {
+            streamingText += message.text;
+           streamingDiv.innerHTML = streamingText
+    .replace(/\*\*(.*?)\*\*/gs, '<strong>$1</strong>')
+    .replace(/`(.*?)`/g, '<code style="background:#3c3c3c;padding:2px 4px;border-radius:3px;font-family:monospace;">$1</code>')
+    .replace(/^(\d+)\.\s/gm, '<br><strong>$1.</strong> ')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+            const chat = document.getElementById('chat');
+            chat.scrollTop = chat.scrollHeight;
+        }
+    }
+    
+    else if (message.command === 'endStream') {
+        streamingDiv = null;
+        streamingText = '';
+    }
+});
+    const message = event.data;
+    
+    if (message.command === 'response') {
+        addMessage(message.text, 'ai');
+    }
+    
+    else if (message.command === 'startStream') {
+        const chat = document.getElementById('chat');
+        streamingDiv = document.createElement('div');
+        streamingDiv.className = 'message ai';
+        streamingDiv.textContent = '';
+        chat.appendChild(streamingDiv);
+        chat.scrollTop = chat.scrollHeight;
+    }
+    
+   else if (message.command === 'streamChunk') {
+    if (streamingDiv) {
+        streamingDiv.innerText += message.text;
+        streamingDiv.innerHTML = streamingDiv.innerText
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/`(.*?)`/g, '<code style="background:#3c3c3c;padding:2px 4px;border-radius:3px;">$1</code>')
+            .replace(/\n/g, '<br>');
+            const chat = document.getElementById('chat');
+            chat.scrollTop = chat.scrollHeight;
+        }
+    }
+    
+    else if (message.command === 'endStream') {
+        streamingDiv = null;
+    }
+});
 
         document.getElementById('input').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {

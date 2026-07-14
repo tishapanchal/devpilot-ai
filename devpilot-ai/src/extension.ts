@@ -72,14 +72,33 @@ export function activate(context: vscode.ExtensionContext) {
 						body: JSON.stringify({
 							model: 'llama3.2',
 							prompt: message.text,
-							stream: false
+							stream: true
 						})
 					});
-					const data = await response.json() as { response: string };
-					currentPanel?.webview.postMessage({
-						command: 'response',
-						text: data.response
-					});
+
+					const reader = response.body?.getReader();
+					const decoder = new TextDecoder();
+
+					currentPanel?.webview.postMessage({ command: 'startStream' });
+
+					while (true) {
+						const { done, value } = await reader!.read();
+						if (done) break;
+						const chunk = decoder.decode(value);
+						const lines = chunk.split('\n').filter(line => line.trim());
+						for (const line of lines) {
+							try {
+								const json = JSON.parse(line) as { response: string };
+								currentPanel?.webview.postMessage({
+									command: 'streamChunk',
+									text: json.response
+								});
+							} catch {}
+						}
+					}
+
+					currentPanel?.webview.postMessage({ command: 'endStream' });
+
 				} catch (error) {
 					currentPanel?.webview.postMessage({
 						command: 'response',
