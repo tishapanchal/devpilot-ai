@@ -67,7 +67,28 @@
             background-color: #252526;
             border-top: 1px solid #3c3c3c;
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .analyze-btn {
+            width: 100%;
+            background-color: #2ea043;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .analyze-btn:hover {
+            background-color: #3fb950;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
         }
 
         textarea {
@@ -83,7 +104,7 @@
             outline: none;
         }
 
-        button {
+        .send-btn {
             background-color: #0e639c;
             color: white;
             border: none;
@@ -93,7 +114,7 @@
             font-size: 13px;
         }
 
-        button:hover {
+        .send-btn:hover {
             background-color: #1177bb;
         }
 
@@ -118,12 +139,20 @@
     </div>
 
     <div class="input-container">
-        <textarea id="input" placeholder="Ask about your code..."></textarea>
-        <button onclick="sendMessage()">Send</button>
+        <button class="analyze-btn" onclick="analyzeCode()">🔍 Analyze My Code</button>
+        <div class="input-row">
+            <textarea id="input" placeholder="Ask anything about your code..."></textarea>
+            <button class="send-btn" onclick="sendMessage()">Send</button>
+        </div>
     </div>
 
     <script>
         const vscode = acquireVsCodeApi();
+
+        function analyzeCode() {
+            vscode.postMessage({ command: 'analyzeCode' });
+            addMessage('Analyzing your code...', 'user');
+        }
 
         function sendMessage() {
             const input = document.getElementById('input');
